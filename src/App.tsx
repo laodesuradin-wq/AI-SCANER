@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Scanner, { ExtractedData } from "./components/Scanner";
 import RPASimulator from "./components/RPASimulator";
 import DatabaseView from "./components/DatabaseView";
+import DashboardView from "./components/DashboardView";
+import IntegrationWorkflow from "./components/IntegrationWorkflow";
 import { LayoutDashboard, Users, ScanLine, Bolt, Settings } from "lucide-react";
 
 export default function App() {
@@ -100,7 +102,11 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
            {activeTab === "database" ? (
               <DatabaseView />
-           ) : activeTab === "scanner" || activeTab === "dashboard" || activeTab === "workflow" ? (
+           ) : activeTab === "dashboard" ? (
+              <DashboardView />
+           ) : activeTab === "workflow" ? (
+              <IntegrationWorkflow />
+           ) : activeTab === "scanner" ? (
              !extractedData ? (
                 <Scanner onComplete={(data) => setExtractedData(data)} />
              ) : (
