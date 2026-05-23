@@ -1,4 +1,4 @@
-import { Upload, FileText, CheckCircle, Fingerprint, MapPin, Loader2, Bot, FileCheck, ServerCog } from "lucide-react";
+import { Upload, FileText, CheckCircle, Fingerprint, MapPin, Loader2, Bot, FileCheck, ServerCog, Wand2 } from "lucide-react";
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -15,6 +15,7 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ExtractedData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,6 +26,67 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
       setPreviewUrl(URL.createObjectURL(selected));
       setResult(null);
       setError(null);
+    }
+  };
+
+  const enhanceImage = () => {
+    if (!previewUrl || !file) return;
+    setIsEnhancing(true);
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = previewUrl;
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setIsEnhancing(false);
+        return;
+      }
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // High Contrast & Grayscale Filter for OCR Enhancement
+      const contrast = 75; // -255 to 255
+      const factor = (259.0 * (contrast + 255.0)) / (255.0 * (259.0 - contrast));
+      
+      for (let i = 0; i < data.length; i += 4) {
+         // Convert to grayscale
+         const r = data[i], g = data[i + 1], b = data[i + 2];
+         const avg = 0.299 * r + 0.587 * g + 0.114 * b;
+         
+         // Apply contrast
+         let newValue = factor * (avg - 128.0) + 128.0;
+         
+         // Clamp
+         if (newValue > 255) newValue = 255;
+         if (newValue < 0) newValue = 0;
+         
+         data[i] = newValue;     
+         data[i + 1] = newValue; 
+         data[i + 2] = newValue; 
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const newFile = new File([blob], "enhanced_" + file.name, { type: "image/jpeg" });
+          setFile(newFile);
+          setPreviewUrl(URL.createObjectURL(newFile));
+        }
+        setIsEnhancing(false);
+      }, "image/jpeg", 0.9);
+    };
+    
+    img.onerror = () => {
+      setIsEnhancing(false);
     }
   };
 
@@ -98,9 +160,24 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
             )}
           </div>
           
+          {previewUrl && !result && (
+            <button
+              onClick={enhanceImage}
+              disabled={isEnhancing || isProcessing}
+              className="w-full bg-slate-800 text-white font-medium py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md disabled:opacity-50 transition-all flex items-center justify-center text-sm"
+            >
+              {isEnhancing ? (
+                <Loader2 className="animate-spin mr-2" size={16} />
+              ) : (
+                <Wand2 className="mr-2" size={16} />
+              )}
+              {isEnhancing ? "Memproses gambar..." : "Perjelas Dokumen (High-Contrast OCR)"}
+            </button>
+          )}
+          
           <button
             onClick={processImage}
-            disabled={!file || isProcessing}
+            disabled={!file || isProcessing || isEnhancing}
             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-medium py-3 px-4 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 transition-all flex items-center justify-center"
           >
             {isProcessing ? (
