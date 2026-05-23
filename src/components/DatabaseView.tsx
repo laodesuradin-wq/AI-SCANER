@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Database, Search, Clock, FileText, ChevronRight } from "lucide-react";
+import { Database, Search, Clock, FileText, ChevronRight, Download } from "lucide-react";
 import { motion } from "motion/react";
 import { ExtractedData } from "./Scanner";
 
@@ -31,6 +31,50 @@ export default function DatabaseView() {
     fetchDB();
   }, []);
 
+  const exportToCSV = () => {
+    if (records.length === 0) return;
+
+    // Collect all unique keys from all records to form the CSV header
+    const allKeys = new Set<string>();
+    records.forEach(record => {
+      record.fields?.forEach(field => allKeys.add(field.key));
+    });
+    
+    const headers = ["ID", "Waktu Ekstraksi", "Ringkasan Validasi", "Skor Kepercayaan", ...Array.from(allKeys)];
+    
+    const csvRows = [];
+    csvRows.push(headers.map(h => `"${h}"`).join(","));
+
+    records.forEach(record => {
+      const row = [
+        record.id,
+        new Date(record.timestamp).toLocaleString("id-ID"),
+        record.summary || "",
+        record.confidence_score?.toString() || ""
+      ];
+
+      Array.from(allKeys).forEach(key => {
+        const field = record.fields?.find(f => f.key === key);
+        row.push(field ? field.value : "");
+      });
+
+      // Escape quotes and format row
+      const formattedRow = row.map(val => `"${val.replace(/"/g, '""')}"`).join(",");
+      csvRows.push(formattedRow);
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `database_penduduk_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 cursor-default">
       <div className="flex items-center justify-between">
@@ -44,13 +88,23 @@ export default function DatabaseView() {
           </p>
         </div>
         
-        <div className="flex bg-white border border-slate-200 rounded-lg shadow-sm px-3 py-2">
-           <Search size={18} className="text-slate-400 mr-2" />
-           <input 
-             type="text" 
-             placeholder="Cari NIK / Nama..." 
-             className="bg-transparent border-none text-sm focus:outline-none w-48 text-slate-700" 
-           />
+        <div className="flex items-center space-x-3">
+          <div className="flex bg-white border border-slate-200 rounded-lg shadow-sm px-3 py-2">
+             <Search size={18} className="text-slate-400 mr-2" />
+             <input 
+               type="text" 
+               placeholder="Cari NIK / Nama..." 
+               className="bg-transparent border-none text-sm focus:outline-none w-48 text-slate-700" 
+             />
+          </div>
+          <button 
+            onClick={exportToCSV}
+            disabled={records.length === 0}
+            className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+          >
+            <Download size={16} className="mr-2" />
+            Export CSV
+          </button>
         </div>
       </div>
 
