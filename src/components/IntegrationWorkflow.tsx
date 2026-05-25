@@ -6,11 +6,11 @@ export default function IntegrationWorkflow() {
     <div className="w-full max-w-5xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
          <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-800 flex items-center">
+            <h2 className="text-2xl font-semibold tracking-tight text-text-main flex items-center">
               <Network className="mr-3 text-indigo-600" />
               Data Integration Platform
             </h2>
-            <p className="text-slate-500 mt-2 text-sm">
+            <p className="text-text-muted mt-2 text-sm">
               Kelola koneksi antar sistem, endpoint API, dan sinkronisasi database eksternal untuk otomasi RPA (Robotic Process Automation). 
             </p>
          </div>
@@ -23,58 +23,58 @@ export default function IntegrationWorkflow() {
         
         {/* Connection Blocks */}
         <div className="space-y-4">
-           <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wider mb-2">Endpoint Terhubung</h3>
+           <h3 className="font-semibold text-text-main text-sm uppercase tracking-wider mb-2">Endpoint Terhubung</h3>
            
-           <div className="bg-white border text-sm border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-colors">
+           <div className="bg-surface border text-sm border-border rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-colors">
               <div className="absolute top-0 right-0 p-4">
                  <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif
                  </span>
               </div>
               <div className="flex items-start">
-                 <div className="bg-slate-100 p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                 <div className="bg-element p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                     <Database size={24} />
                  </div>
                  <div>
-                    <h4 className="font-semibold text-slate-800 text-base">Siak Master DB (PostgreSQL)</h4>
-                    <p className="text-slate-500 mt-1 text-xs">Sinkronisasi data langsung via secure tunnel (SSH). Target utama RPA untuk entri data penduduk.</p>
-                    <div className="mt-4 font-mono text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded inline-block">192.168.10.15:5432</div>
+                    <h4 className="font-semibold text-text-main text-base">ERP Master DB (PostgreSQL)</h4>
+                    <p className="text-text-muted mt-1 text-xs">Sinkronisasi logistik langsung via secure tunnel (SSH). Target utama RPA untuk entri data material.</p>
+                    <div className="mt-4 font-mono text-xs text-text-muted bg-page px-2 py-1 rounded inline-block">192.168.10.15:5432</div>
                  </div>
               </div>
            </div>
 
-           <div className="bg-white border text-sm border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-colors">
+           <div className="bg-surface border text-sm border-border rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-colors">
               <div className="absolute top-0 right-0 p-4">
                  <span className="flex items-center text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif
                  </span>
               </div>
               <div className="flex items-start">
-                 <div className="bg-slate-100 p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                 <div className="bg-element p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                     <AppWindow size={24} />
                  </div>
                  <div>
-                    <h4 className="font-semibold text-slate-800 text-base">Sistem Arsip Nasional (API)</h4>
-                    <p className="text-slate-500 mt-1 text-xs">REST API untuk validasi silang KTP (NIK) secara real-time. Membantu AI dalam verifikasi format.</p>
-                    <div className="mt-4 font-mono text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded inline-block">https://api.arsip.go.id/v1/</div>
+                    <h4 className="font-semibold text-text-main text-base">Vendor Validation System (API)</h4>
+                    <p className="text-text-muted mt-1 text-xs">REST API untuk validasi silang Part Number & Batch secara real-time. Membantu AI dalam verifikasi material.</p>
+                    <div className="mt-4 font-mono text-xs text-text-muted bg-page px-2 py-1 rounded inline-block">https://api.vendor-logistic.com/v1/</div>
                  </div>
               </div>
            </div>
 
-           <div className="bg-white border text-sm border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden group opacity-75 grayscale hover:grayscale-0 transition-all">
+           <div className="bg-surface border text-sm border-border rounded-xl p-5 shadow-sm relative overflow-hidden group opacity-75 grayscale hover:grayscale-0 transition-all">
               <div className="absolute top-0 right-0 p-4">
                  <span className="flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span> Standby
                  </span>
               </div>
               <div className="flex items-start">
-                 <div className="bg-slate-100 p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
+                 <div className="bg-element p-3 rounded-xl text-slate-600 mr-4 group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
                     <UploadCloud size={24} />
                  </div>
                  <div>
-                    <h4 className="font-semibold text-slate-800 text-base">Cloud Storage Backup S3</h4>
-                    <p className="text-slate-500 mt-1 text-xs">Penyimpanan cold backup untuk gambar asli KTP yang sudah terbaca AI.</p>
-                    <div className="mt-4 font-mono text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded inline-block">s3://siak-archive-backup</div>
+                    <h4 className="font-semibold text-text-main text-base">Cloud Storage Backup S3</h4>
+                    <p className="text-text-muted mt-1 text-xs">Penyimpanan cold backup untuk gambar asli Label yang sudah terbaca AI.</p>
+                    <div className="mt-4 font-mono text-xs text-text-muted bg-page px-2 py-1 rounded inline-block">s3://erp-logistics-backup</div>
                  </div>
               </div>
            </div>
@@ -82,7 +82,7 @@ export default function IntegrationWorkflow() {
 
         {/* Visual Mapping */}
         <div>
-           <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wider mb-2">Topologi Aliran Data (Visual)</h3>
+           <h3 className="font-semibold text-text-main text-sm uppercase tracking-wider mb-2">Topologi Aliran Data (Visual)</h3>
            <div className="bg-slate-900 rounded-xl p-6 h-[500px] border border-slate-800 shadow-lg relative flex flex-col items-center justify-center overflow-hidden">
                {/* Background Grid */}
                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
@@ -98,7 +98,7 @@ export default function IntegrationWorkflow() {
 
                   <div className="h-10 w-0.5 bg-gradient-to-b from-blue-500 to-emerald-500 relative">
                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center animate-bounce">
-                        <div className="w-2 h-2 rounded-full bg-white shadow-lg blur-[1px]"></div>
+                        <div className="w-2 h-2 rounded-full bg-surface shadow-lg blur-[1px]"></div>
                      </div>
                   </div>
 

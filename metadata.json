@@ -1,6 +1,6 @@
 {
   "name": "Sandra AI - Siak Assistant",
   "description": "Aplikasi AI Assistant (Sandra) untuk mereduksi human error pada pekerjaan repetitif administrasi Siak Mobile menggunakan Computer Vision dan RPA.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

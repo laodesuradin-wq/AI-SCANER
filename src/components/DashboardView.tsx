@@ -1,202 +1,265 @@
-import React, { useEffect, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, PieChart, Pie, Cell } from 'recharts';
-import { Activity, Zap, ShieldCheck, AlertCircle, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer 
+} from 'recharts';
+import { 
+  Activity, Cpu, Network, Bot, Zap, AlertTriangle, TrendingUp 
+} from 'lucide-react';
 
-interface DBRecord {
-  id: string;
-  timestamp: string;
-  confidence_score: number;
-}
+const initialActivityData = [
+  { time: '08:00', scans: 12, errors: 0 },
+  { time: '09:00', scans: 25, errors: 2 },
+  { time: '10:00', scans: 45, errors: 1 },
+  { time: '11:00', scans: 30, errors: 4 },
+  { time: '12:00', scans: 15, errors: 0 },
+  { time: '13:00', scans: 50, errors: 3 },
+  { time: '14:00', scans: 60, errors: 2 },
+];
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
+const initialEvents = [
+  { id: 1, type: 'rpa', icon: Bot, color: 'text-indigo-500', title: 'RPA Task: Auto-Validation', desc: 'Berhasil memvalidasi 12 dokumen batch terbaru dengan server Dukcapil.', time: 'Baru saja' },
+  { id: 2, type: 'ai', icon: Cpu, color: 'text-rose-500', title: 'AI Anomaly Detection', desc: 'Mendeteksi kemungkinan NIK ganda pada scan DOC-84221.', time: '2 menit yang lalu' },
+  { id: 3, type: 'sync', icon: Network, color: 'text-emerald-500', title: 'Data Integration Sync', desc: 'Sinkronisasi delta warehouse wilayah Jakarta Selatan selesai.', time: '5 menit yang lalu' }
+];
 
 export default function DashboardView() {
-  const [stats, setStats] = useState({
-    totalProcessed: 0,
-    avgConfidence: 0,
-    errorPrevented: 0,
-    timeSavedMinutes: 0
-  });
+  const [isSyncing, setIsSyncing] = useState(true);
+  const [activityData, setActivityData] = useState(initialActivityData);
+  const [events, setEvents] = useState(initialEvents);
+  const [rpaTasks, setRpaTasks] = useState(124);
+  const [accuracy, setAccuracy] = useState(98.7);
+  const [inferenceTime, setInferenceTime] = useState(1.2);
 
-  const [hourlyData, setHourlyData] = useState<any[]>([]);
-  const [qualityData, setQualityData] = useState<any[]>([]);
-  
   useEffect(() => {
-    // Generate some mock historical data to make the dashboard look alive
-    // In a real scenario, this would be computed from the database records
-    const mockHourly = Array.from({ length: 7 }).map((_, i) => {
-      const date = new Date();
-      date.setHours(date.getHours() - (6 - i));
-      return {
-        time: `${date.getHours()}:00`,
-        processed: Math.floor(Math.random() * 50) + 10,
-        errorsPrevented: Math.floor(Math.random() * 5)
-      };
-    });
+    // Sync indicator interval
+    const syncInterval = setInterval(() => {
+      setIsSyncing(prev => !prev);
+    }, 3000);
 
-    setHourlyData(mockHourly);
-
-    const fetchAnalytics = async () => {
-      try {
-        const res = await fetch('/api/database');
-        if (res.ok) {
-          const data: DBRecord[] = await res.json();
+    // Dynamic data update interval
+    const updateInterval = setInterval(() => {
+      // Update chart data
+      setActivityData(prev => {
+        const newData = [...prev];
+        const lastData = newData[newData.length - 1];
+        
+        // Sometimes add new data point
+        if (Math.random() > 0.7) {
+          const timeParts = lastData.time.split(':');
+          let hour = parseInt(timeParts[0]);
+          let min = parseInt(timeParts[1]) + 15;
+          if (min >= 60) {
+            min = 0;
+            hour += 1;
+          }
+          const timeStr = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
           
-          let total = data.length;
-          let confSum = data.reduce((acc, curr) => acc + (curr.confidence_score || 95), 0);
+          if (newData.length >= 8) newData.shift(); // keep it bounded
           
-          setStats({
-            totalProcessed: 1245 + total, // Base fake numbers + real ones
-            avgConfidence: total > 0 ? (confSum / total) : 98.5,
-            errorPrevented: Math.floor((1245 + total) * 0.12),
-            timeSavedMinutes: (1245 + total) * 3 // Approx 3 mins saved per document
+          newData.push({
+            time: timeStr,
+            scans: Math.floor(Math.random() * 40) + 20,
+            errors: Math.floor(Math.random() * 5)
           });
-
-          setQualityData([
-             { name: 'Sangat Akurat (>95%)', value: 85 + (total > 0 ? Math.floor(Math.random()*10) : 0) },
-             { name: 'Cukup Akurat (80-95%)', value: 12 },
-             { name: 'Perlu Tinjauan (<80%)', value: 3 },
-          ]);
+        } else {
+          // just perturb the last point slightly
+          newData[newData.length - 1] = {
+            ...lastData,
+            scans: lastData.scans + Math.floor(Math.random() * 3)
+          };
         }
-      } catch (e) {
-        console.error("Failed to load analytics", e);
+        return newData;
+      });
+      
+      // Update RPA tasks
+      if (Math.random() > 0.5) {
+        setRpaTasks(prev => prev + Math.floor(Math.random() * 3) + 1);
       }
+
+      // Fluctuate accuracy slightly
+      setAccuracy(prev => {
+        const newAcc = prev + (Math.random() * 0.4 - 0.2);
+        return Math.min(99.9, Math.max(95.0, newAcc));
+      });
+
+      // Fluctuate inference time slightly
+      setInferenceTime(prev => {
+        const newTime = prev + (Math.random() * 0.2 - 0.1);
+        return Math.max(0.5, newTime);
+      });
+
+      // Add a new event occasionally
+      if (Math.random() > 0.8) {
+         setEvents(prev => {
+            const types = [
+              { icon: Bot, color: 'text-indigo-500', type: 'rpa', title: 'RPA Extract', desc: `Mengekstrak data dari ${Math.floor(Math.random() * 5) + 1} KK.` },
+              { icon: Cpu, color: 'text-rose-500', type: 'ai', title: 'AI OCR Tuning', desc: 'Auto-kalibrasi model OCR selesai pada node-2.' },
+              { icon: Network, color: 'text-emerald-500', type: 'sync', title: 'Data Validated', desc: `Ping API Dukcapil sukses (${Math.floor(Math.random() * 20 + 10)}ms).` },
+            ];
+            const randType = types[Math.floor(Math.random() * types.length)];
+            
+            const newEvent = {
+              id: Date.now(),
+              type: randType.type,
+              icon: randType.icon,
+              color: randType.color,
+              title: randType.title,
+              desc: randType.desc,
+              time: 'Baru saja'
+            };
+            
+            // update times on old events (simplified)
+            const updated = prev.map(e => {
+              if (e.time === 'Baru saja') return { ...e, time: 'Beberapa menit yang lalu' };
+              return e;
+            });
+            
+            return [newEvent, ...updated].slice(0, 5); // Keep last 5
+         });
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(syncInterval);
+      clearInterval(updateInterval);
     };
-
-    fetchAnalytics();
-    
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        totalProcessed: prev.totalProcessed + Math.floor(Math.random() * 2),
-      }));
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-         <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-800">Real-Time Analytics Dashboard</h2>
-            <p className="text-slate-500 text-sm mt-1">AI-driven insights & RPA performance metrics.</p>
-         </div>
-         <div className="flex items-center space-x-2">
-            <span className="flex h-3 w-3 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <span className="text-sm font-medium text-emerald-600 uppercase tracking-wider">Live Monitoring</span>
-         </div>
+    <div className="flex-1 flex flex-col pt-4 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-text-main flex items-center">
+            <Activity size={24} className="mr-3 text-indigo-500" />
+            SIAK Control Center
+          </h2>
+          <p className="text-text-muted mt-1">Real-time Dashboard & System Analytics</p>
+        </div>
+        <div className="flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-sm font-medium border border-emerald-200 dark:border-emerald-800">
+          <span className="relative flex h-2 w-2 mr-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          System Online
+        </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <div className="flex justify-between items-start mb-4">
-              <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><Activity size={24} /></div>
-           </div>
-           <div className="text-3xl font-bold text-slate-800">{stats.totalProcessed.toLocaleString()}</div>
-           <div className="text-sm text-slate-500 mt-1">Dokumen Diproses (RPA)</div>
-           <div className="mt-4 text-xs text-emerald-600 font-medium flex items-center">
-             +12% vs minggu lalu
-           </div>
+        {/* Computer Vision Widget */}
+        <div className="bg-surface border border-border p-4 rounded-xl shadow-sm flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+              <Zap size={20} />
+            </div>
+            <span className="text-xs font-medium text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">Optimized</span>
+          </div>
+          <h3 className="text-text-muted text-sm font-medium">Computer Vision</h3>
+          <div className="mt-1 flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-text-main">{accuracy.toFixed(1)}%</span>
+            <span className="text-xs text-text-muted">Akurasi OCR</span>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <div className="flex justify-between items-start mb-4">
-              <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600"><ShieldCheck size={24} /></div>
-           </div>
-           <div className="text-3xl font-bold text-slate-800">{stats.avgConfidence.toFixed(1)}%</div>
-           <div className="text-sm text-slate-500 mt-1">Akurasi Ekstraksi AI</div>
-           <div className="mt-4 text-xs text-emerald-600 font-medium flex items-center">
-             Tingkat Kepercayaan Tinggi
-           </div>
+        {/* Data Integration Platform Widget */}
+        <div className="bg-surface border border-border p-4 rounded-xl shadow-sm flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
+              <Network size={20} />
+            </div>
+            <span className="text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">{isSyncing ? 'Syncing...' : 'Connected'}</span>
+          </div>
+          <h3 className="text-text-muted text-sm font-medium">Data Integration</h3>
+          <div className="mt-1 flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-text-main">4 API</span>
+            <span className="text-xs text-text-muted">Dukcapil Terhubung</span>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <div className="flex justify-between items-start mb-4">
-              <div className="bg-amber-50 p-2 rounded-lg text-amber-600"><AlertCircle size={24} /></div>
-           </div>
-           <div className="text-3xl font-bold text-slate-800">{stats.errorPrevented.toLocaleString()}</div>
-           <div className="text-sm text-slate-500 mt-1">Human Errors Dicegah</div>
-           <div className="mt-4 text-xs text-emerald-600 font-medium flex items-center">
-             Validasi AI Vision
-           </div>
+        {/* AI Analytics Widget */}
+        <div className="bg-surface border border-border p-4 rounded-xl shadow-sm flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-rose-600 dark:text-rose-400">
+              <Cpu size={20} />
+            </div>
+            <span className="text-xs font-medium text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full flex items-center">
+              <TrendingUp size={12} className="mr-1" /> Active
+            </span>
+          </div>
+          <h3 className="text-text-muted text-sm font-medium">AI Analytics</h3>
+          <div className="mt-1 flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-text-main">{inferenceTime.toFixed(1)}s</span>
+            <span className="text-xs text-text-muted">Avg Inference Time</span>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <div className="flex justify-between items-start mb-4">
-              <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600"><Clock size={24} /></div>
-           </div>
-           <div className="text-3xl font-bold text-slate-800">{Math.floor(stats.timeSavedMinutes / 60)}j {stats.timeSavedMinutes % 60}m</div>
-           <div className="text-sm text-slate-500 mt-1">Waktu Kerja Efisien</div>
-           <div className="mt-4 text-xs text-emerald-600 font-medium flex items-center">
-             Otomasi end-to-end
-           </div>
+        {/* RPA Widget */}
+        <div className="bg-surface border border-border p-4 rounded-xl shadow-sm flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-600 dark:text-amber-400">
+              <Bot size={20} />
+            </div>
+            <span className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-full animate-pulse border border-amber-200 dark:border-amber-800">
+              Processing
+            </span>
+          </div>
+          <h3 className="text-text-muted text-sm font-medium">RPA Status</h3>
+          <div className="mt-1 flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-text-main">{rpaTasks}</span>
+            <span className="text-xs text-text-muted">Tasks Auto-Completed</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-           <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-slate-800">Aktivitas Otomasi (Real-time)</h3>
-           </div>
-           <div className="h-[300px] w-full">
-             <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorProcessed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Area type="monotone" dataKey="processed" name="Dokumen Berhasil" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorProcessed)" />
-                </AreaChart>
-             </ResponsiveContainer>
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[300px]">
+        {/* Real-time Chart */}
+        <div className="col-span-1 lg:col-span-2 bg-surface border border-border rounded-xl shadow-sm p-4 flex flex-col">
+          <h3 className="text-sm font-bold text-text-main mb-4 flex items-center">
+            <Activity size={16} className="mr-2 text-indigo-500" />
+            Real-Time Scan Activity
+          </h3>
+          <div className="flex-1 min-h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={activityData}>
+                <defs>
+                  <linearGradient id="colorScans" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <RechartsTooltip 
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Area type="monotone" dataKey="scans" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorScans)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Quality Chart */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-           <h3 className="text-lg font-semibold text-slate-800 mb-6">Kualitas Deteksi AI</h3>
-           <div className="h-[250px] w-full">
-             <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={qualityData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {qualityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
-                </PieChart>
-             </ResponsiveContainer>
-           </div>
-           
-           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
-             <span className="text-slate-500 flex items-center">
-                <Zap size={16} className="text-amber-500 mr-2"/> AI Model
-             </span>
-             <span className="font-semibold text-slate-700">Gemini 2.5 Flash</span>
-           </div>
+        {/* Secondary Chart / Events */}
+        <div className="col-span-1 bg-surface border border-border rounded-xl shadow-sm p-4 flex flex-col">
+          <h3 className="text-sm font-bold text-text-main mb-4 flex items-center">
+            <AlertTriangle size={16} className="mr-2 text-amber-500" />
+            RPA & AI Event Log
+          </h3>
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+            {events.map(event => {
+               const EventIcon = event.icon;
+               return (
+                 <div key={event.id} className="flex items-start space-x-3 p-3 bg-page rounded-lg border border-border animate-in fade-in slide-in-from-top-2 duration-300">
+                    <EventIcon size={16} className={`${event.color} mt-0.5 shrink-0`} />
+                    <div>
+                      <p className="text-xs font-semibold text-text-main">{event.title}</p>
+                      <p className="text-[11px] text-text-muted mt-1">{event.desc}</p>
+                      <span className="text-[10px] text-text-muted">{event.time}</span>
+                    </div>
+                 </div>
+               );
+            })}
+          </div>
         </div>
       </div>
     </div>

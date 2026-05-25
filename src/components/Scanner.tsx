@@ -1,12 +1,14 @@
-import { Upload, FileText, CheckCircle, Fingerprint, MapPin, Loader2, Bot, FileCheck, ServerCog, Wand2 } from "lucide-react";
-import React, { useState, useRef } from "react";
+import { Upload, FileText, CheckCircle, Fingerprint, MapPin, Loader2, Bot, FileCheck, ServerCog, Wand2, Download, Camera, X, CreditCard, Receipt, Package, Tag } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import jsQR from "jsqr";
 import { cn } from "../lib/utils";
 
 export interface ExtractedData {
   fields: { key: string; value: string }[];
   summary: string;
   confidence_score: number;
+  document_type?: string;
 }
 
 export default function Scanner({ onComplete }: { onComplete: (data: ExtractedData) => void }) {
@@ -16,8 +18,97 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
   const [result, setResult] = useState<ExtractedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const captureInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scanActiveRaw = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (scanActiveRaw.current) stopCamera();
+    };
+  }, []);
+
+  const startCamera = async () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setResult(null);
+    setError(null);
+    setIsCameraOpen(true);
+    scanActiveRaw.current = true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("playsinline", "true");
+        videoRef.current.play();
+        requestAnimationFrame(tick);
+      }
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError' || err.message === 'Permission denied' || err.name === 'NotSupportedError') {
+        setError("Izin kamera ditolak. Silakan buka aplikasi di tab baru, ATAU gunakan tombol 'Unggah Dokumen' untuk memotret menggunakan kamera bawaan ponsel/komputer.");
+      } else {
+        setError(`Kamera tidak dapat diakses: ${err.message || "Pastikan perangkat memiliki kamera."}`);
+      }
+      stopCamera();
+    }
+  };
+
+  const stopCamera = () => {
+    setIsCameraOpen(false);
+    scanActiveRaw.current = false;
+    if (videoRef.current?.srcObject) {
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const tick = () => {
+    if (!scanActiveRaw.current) return;
+    
+    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+
+      if (code) {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const newFile = new File([blob], "qr_scan.jpg", { type: "image/jpeg" });
+            setFile(newFile);
+            setPreviewUrl(URL.createObjectURL(newFile));
+            setResult(null);
+            
+            stopCamera();
+            processImage(newFile);
+          }
+        }, "image/jpeg", 0.9);
+        return;
+      }
+    }
+    requestAnimationFrame(tick);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -90,13 +181,14 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
     }
   };
 
-  const processImage = async () => {
-    if (!file) return;
+  const processImage = async (targetFile?: File) => {
+    const fileToProcess = targetFile || file;
+    if (!fileToProcess) return;
     setIsProcessing(true);
     setError(null);
     
     const formData = new FormData();
-    formData.append("document", file);
+    formData.append("document", fileToProcess);
 
     try {
       const response = await fetch("/api/extract", {
@@ -123,7 +215,7 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">AI Vision Scanner</h2>
-          <p className="text-gray-500 mt-1">Upload KTP, Kartu Keluarga, atau formulir administrasi.</p>
+          <p className="text-text-muted mt-1">Upload Label Packing, Barcode, atau formulir produksi.</p>
         </div>
       </div>
       
@@ -131,33 +223,81 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
         {/* Upload Section */}
         <div className="space-y-4">
           <div 
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!isCameraOpen) fileInputRef.current?.click();
+            }}
             className={cn(
-              "border-2 border-dashed rounded-xl p-8 transition-colors text-center cursor-pointer flex flex-col items-center justify-center min-h-[300px]",
-              previewUrl ? "border-emerald-200 bg-emerald-50/30" : "border-gray-200 hover:border-emerald-400 hover:bg-gray-50"
+              "border-2 border-dashed rounded-xl p-8 transition-colors text-center cursor-pointer flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden",
+              previewUrl ? "border-emerald-200 bg-emerald-50/30" : "border-border hover:border-emerald-400 hover:bg-page"
             )}
           >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleFileChange}
-            />
-            {previewUrl ? (
-              <div className="space-y-4 w-full">
-                <img src={previewUrl} alt="Preview" className="max-h-[250px] object-contain mx-auto rounded-lg shadow-sm" />
-                <p className="text-sm font-medium text-emerald-700">{file?.name}</p>
+            {isCameraOpen ? (
+              <div className="absolute inset-0 bg-black flex flex-col">
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-full object-cover"
+                  playsInline
+                  autoPlay
+                  muted
+                />
+                <button 
+                  onClick={(e) => { e.stopPropagation(); stopCamera(); }}
+                  className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition"
+                >
+                  <X size={20} />
+                </button>
+                <div className="absolute bottom-4 inset-x-0 text-center">
+                  <span className="bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-md">
+                    Scanning untuk QR Code...
+                  </span>
+                </div>
+                {/* Hidden canvas for image data extraction */}
+                <canvas ref={canvasRef} className="hidden" />
               </div>
             ) : (
-              <div className="space-y-4 text-gray-500 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
-                  <Upload size={24} />
-                </div>
-                <p className="font-medium">Klik untuk upload dokumen referensi</p>
-                <p className="text-xs">Mendukung format PNG, JPG, JPEG (Max 5MB)</p>
-              </div>
+              <>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleFileChange}
+                />
+                <input 
+                  type="file" 
+                  ref={captureInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  capture="environment" 
+                  onChange={handleFileChange}
+                />
+                {previewUrl ? (
+                  <div className="space-y-4 w-full">
+                    <img src={previewUrl} alt="Preview" className="max-h-[250px] object-contain mx-auto rounded-lg shadow-sm" />
+                    <p className="text-sm font-medium text-emerald-700">{file?.name}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-text-muted flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
+                      <Upload size={24} />
+                    </div>
+                    <p className="font-medium">Klik untuk upload dokumen referensi</p>
+                    <p className="text-xs">Mendukung format PNG, JPG, JPEG (Max 5MB)</p>
+                  </div>
+                )}
+              </>
             )}
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={startCamera}
+              disabled={isProcessing || isEnhancing || isCameraOpen}
+              className="flex-1 bg-surface border border-border text-text-main font-medium py-2.5 px-4 rounded-xl shadow-sm hover:bg-page disabled:opacity-50 transition-all flex items-center justify-center text-sm"
+            >
+              <Camera className="mr-2" size={16} />
+              Scan QR Code
+            </button>
           </div>
           
           {previewUrl && !result && (
@@ -203,7 +343,7 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
         {/* Result Area */}
         <div className="relative">
           {(!result && !isProcessing) ? (
-            <div className="h-full border border-gray-100 bg-gray-50/50 rounded-xl flex flex-col items-center justify-center text-gray-400 p-8 min-h-[400px]">
+            <div className="h-full border border-border bg-page/50 rounded-xl flex flex-col items-center justify-center text-text-muted p-8 min-h-[400px]">
               <FileCheck size={48} className="mb-4 text-gray-300" />
               <p>Hasil ekstraksi Computer Vision akan muncul di sini.</p>
               <p className="text-xs mt-2 text-center max-w-xs">AI akan mendeteksi entitas dan validasi format dokumen secara otomatis.</p>
@@ -216,7 +356,7 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="h-full border border-gray-100 bg-white rounded-xl shadow-sm p-6 flex flex-col items-center gap-4 justify-center min-h-[400px]"
+                  className="h-full border border-border bg-surface rounded-xl shadow-sm p-6 flex flex-col items-center gap-4 justify-center min-h-[400px]"
                 >
                   <div className="relative">
                      <div className="absolute inset-0 bg-emerald-200 rounded-full animate-ping opacity-75"></div>
@@ -225,8 +365,8 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
                      </div>
                   </div>
                   <div className="text-center space-y-2">
-                    <h3 className="font-medium text-gray-800">Menganalisis Gambar...</h3>
-                    <p className="text-sm text-gray-500">Mendeteksi NIK, Nama, dan format alamat.</p>
+                    <h3 className="font-medium text-text-main">Menganalisis Gambar...</h3>
+                    <p className="text-sm text-text-muted">Mendeteksi SKU, Batch ID, dan data material.</p>
                   </div>
                 </motion.div>
               ) : result ? (
@@ -234,7 +374,7 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
                   key="result"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="h-full border border-emerald-100 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col"
+                  className="h-full border border-emerald-100 bg-surface rounded-xl shadow-sm overflow-hidden flex flex-col"
                 >
                   <div className="bg-emerald-50 px-6 py-4 border-b border-emerald-100 flex justify-between items-center">
                     <div>
@@ -244,35 +384,60 @@ export default function Scanner({ onComplete }: { onComplete: (data: ExtractedDa
                       </h3>
                       <p className="text-xs text-emerald-600 mt-1">{result.summary}</p>
                     </div>
-                    <div className="bg-white px-3 py-1 rounded-full shadow-sm text-xs font-medium text-emerald-700 flex items-center">
+                    <div className="bg-surface px-3 py-1 rounded-full shadow-sm text-xs font-medium text-emerald-700 flex items-center">
                        Akurasi: {result.confidence_score || 98}%
                     </div>
                   </div>
                   
                   <div className="p-6 flex-1 overflow-y-auto">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">Extracted Fields</p>
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-xs font-medium text-text-muted uppercase tracking-wider">Extracted Fields</p>
+                      {result.document_type && (
+                        <span className="flex items-center text-xs font-medium bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md border border-emerald-200">
+                          {result.document_type.toLowerCase().includes('ktp') ? <CreditCard size={12} className="mr-1.5" /> : 
+                           result.document_type.toLowerCase().includes('invoice') ? <Receipt size={12} className="mr-1.5" /> :
+                           result.document_type.toLowerCase().includes('shipping') || result.document_type.toLowerCase().includes('label') ? <Package size={12} className="mr-1.5" /> :
+                           <Tag size={12} className="mr-1.5" />}
+                          {result.document_type}
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       {result.fields?.map((field, idx) => (
                         <div key={idx} className="group flex flex-col border-b border-gray-50 pb-3">
-                          <label className="text-xs font-medium text-gray-500 flex items-center">
+                          <label className="text-xs font-medium text-text-muted flex items-center">
                             {field.key}
                           </label>
                           <input 
                             type="text" 
                             defaultValue={field.value} 
-                            className="bg-transparent font-mono text-sm font-medium text-gray-900 focus:outline-none focus:ring-1 focus:ring-emerald-400 rounded-md py-1 px-2 -ml-2 transition-colors hover:bg-gray-50 focus:bg-white"
+                            className="bg-transparent font-mono text-sm font-medium text-text-main focus:outline-none focus:ring-1 focus:ring-emerald-400 rounded-md py-1 px-2 -ml-2 transition-colors hover:bg-page focus:bg-surface"
                           />
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gray-50 border-t border-gray-100">
+                  <div className="p-4 bg-page border-t border-border flex flex-col gap-3">
                     <button 
                       onClick={() => onComplete(result)}
-                      className="w-full bg-slate-900 text-white font-medium py-3 rounded-lg shadow-sm hover:bg-slate-800 transition-colors flex justify-center items-center"
+                      className="w-full bg-slate-900 text-white font-medium py-3 rounded-lg shadow-sm hover:bg-slate-800 transition-colors flex justify-center items-center cursor-pointer"
                     >
                       Kirim Data ke Otomasi (RPA) &rarr;
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `dokumen_hasil_${new Date().getTime()}.json`;
+                        link.click();
+                      }}
+                      className="w-full bg-surface border border-border text-text-main font-medium py-3 rounded-lg shadow-sm hover:bg-page transition-colors flex justify-center items-center cursor-pointer"
+                    >
+                      <Download size={18} className="mr-2 text-text-muted" />
+                      Simpan / Unduh Dokumen (JSON)
                     </button>
                   </div>
                 </motion.div>

@@ -4,11 +4,40 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-page: var(--theme-page);
+  --color-surface: var(--theme-surface);
+  --color-element: var(--theme-element);
+  --color-border: var(--theme-border);
+  --color-text-main: var(--theme-text-main);
+  --color-text-muted: var(--theme-text-muted);
+}
+
+@layer base {
+  :root {
+    --theme-page: var(--color-slate-50);
+    --theme-surface: #ffffff;
+    --theme-element: var(--color-slate-100);
+    --theme-border: var(--color-slate-200);
+    --theme-text-main: var(--color-slate-800);
+    --theme-text-muted: var(--color-slate-500);
+  }
+
+  .dark {
+    --theme-page: var(--color-slate-950);
+    --theme-surface: var(--color-slate-900);
+    --theme-element: var(--color-slate-800);
+    --theme-border: var(--color-slate-700);
+    --theme-text-main: var(--color-slate-100);
+    --theme-text-muted: var(--color-slate-400);
+  }
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
+  background-color: var(--theme-page);
+  color: var(--theme-text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -20,4 +49,23 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #334155;
   border-radius: 20px;
+}
+
+@media print {
+  aside {
+    display: none !important;
+  }
+  header {
+    display: none !important;
+  }
+  main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .overflow-y-auto {
+    overflow: visible !important;
+  }
+  button {
+    display: none !important;
+  }
 }

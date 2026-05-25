@@ -53,7 +53,7 @@ async function startServer() {
                 },
               },
               {
-                text: "Extract data from this document. If it's an ID card (KTP), extract NIK, Name, Date/Place of Birth, Address, etc. If it's a generic document, extract key-value pairs. Return the result strictly as a JSON object with 'fields' (array of {key, value}) and 'summary' (brief string) and 'confidence_score' (number 0-100). Do NOT use markdown code blocks like ```json ... ```, just pure JSON text.",
+                text: "Extract data from this document. If it's an ID card (KTP), extract NIK, Name, Date/Place of Birth, Address, etc. If it's a generic document, extract key-value pairs. Return the result strictly as a JSON object with 'fields' (array of {key, value}), 'summary' (brief string), 'confidence_score' (number 0-100), and 'document_type' (e.g. 'KTP', 'Invoice', 'Shipping Label', etc.). Do NOT use markdown code blocks like ```json ... ```, just pure JSON text.",
               },
             ],
           },
