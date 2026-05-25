@@ -136,7 +136,16 @@ export default function DocumentScanner() {
               </div>
               
               <div>
-                <h2 className="text-2xl font-bold text-text-main mb-2">Pindai Kartu Keluarga (KK)</h2>
+                <h2 className="text-2xl font-bold text-text-main mb-2 flex items-center justify-center sm:justify-start flex-wrap gap-2">
+                  Pindai Kartu Keluarga (KK)
+                  <span className="flex items-center space-x-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 tracking-wide uppercase shadow-sm">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    <span>RAG Detection Active</span>
+                  </span>
+                </h2>
                 <p className="text-text-muted">Upload file atau gunakan kamera ponsel untuk memindai dokumen aslinya</p>
               </div>
 
@@ -190,6 +199,40 @@ export default function DocumentScanner() {
                   />
                 )}
                 
+                {/* Focus Object Bounding Box Animation */}
+                {(scanState === 'scanning' || scanState === 'results') && scannedImage && (
+                  <div className={`absolute top-[15%] left-[5%] w-[90%] h-[70%] border-2 rounded-sm z-10 flex items-start justify-start p-2 pointer-events-none transition-all duration-500 ${scanState === 'scanning' ? 'border-emerald-500 border-dashed animate-pulse bg-emerald-500/10' : 'border-indigo-500 border-solid bg-indigo-500/5'}`}>
+                     <span className={`${scanState === 'scanning' ? 'bg-emerald-500' : 'bg-indigo-500'} text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center transition-colors`}>
+                       {scanState === 'scanning' ? (
+                         <><ScanLine size={10} className="mr-1 animate-spin" /> FOCUS OBJECT DETECTED</>
+                       ) : (
+                         <><CheckCircle2 size={10} className="mr-1" /> OBJECT LOCKED & EXTRACTED</>
+                       )}
+                     </span>
+                     
+                     {/* Corner markers */}
+                     <div className={`absolute top-[-2px] left-[-2px] w-4 h-4 border-t-4 border-l-4 ${scanState === 'scanning' ? 'border-emerald-500' : 'border-indigo-500'}`} />
+                     <div className={`absolute top-[-2px] right-[-2px] w-4 h-4 border-t-4 border-r-4 ${scanState === 'scanning' ? 'border-emerald-500' : 'border-indigo-500'}`} />
+                     <div className={`absolute bottom-[-2px] left-[-2px] w-4 h-4 border-b-4 border-l-4 ${scanState === 'scanning' ? 'border-emerald-500' : 'border-indigo-500'}`} />
+                     <div className={`absolute bottom-[-2px] right-[-2px] w-4 h-4 border-b-4 border-r-4 ${scanState === 'scanning' ? 'border-emerald-500' : 'border-indigo-500'}`} />
+                     
+                     {/* Data Field Highlighting Regions */}
+                     {scanState === 'results' && (
+                       <>
+                         <div className="absolute top-[20%] left-[5%] w-[40%] h-[15%] border border-indigo-400/50 bg-indigo-400/20 rounded shadow-[inset_0_0_10px_rgba(99,102,241,0.2)] animate-pulse">
+                           <span className="absolute -top-4 left-0 text-[8px] text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 px-1 font-bold rounded-sm">FIELD: NO. KK</span>
+                         </div>
+                         <div className="absolute top-[40%] left-[5%] w-[60%] h-[15%] border border-indigo-400/50 bg-indigo-400/20 rounded shadow-[inset_0_0_10px_rgba(99,102,241,0.2)] animate-pulse delay-75">
+                           <span className="absolute -top-4 left-0 text-[8px] text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 px-1 font-bold rounded-sm">FIELD: DATA PRIBADI</span>
+                         </div>
+                         <div className="absolute top-[65%] left-[5%] w-[85%] h-[25%] border border-indigo-400/50 bg-indigo-400/20 rounded shadow-[inset_0_0_10px_rgba(99,102,241,0.2)] animate-pulse delay-150">
+                           <span className="absolute -top-4 left-0 text-[8px] text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 px-1 font-bold rounded-sm">FIELD: TABEL ANGGOTA KELUARGA</span>
+                         </div>
+                       </>
+                     )}
+                  </div>
+                )}
+                
                 {/* Scanning Animation Overlay */}
                 {scanState === 'scanning' && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -201,7 +244,7 @@ export default function DocumentScanner() {
                           />
                        </div>
                        <p className="text-white text-center font-medium font-mono text-sm leading-relaxed drop-shadow-md">
-                         Menganalisis piksel... {progress}%
+                         Menganalisis piksel via RAG... {progress}%
                        </p>
                     </div>
                     {/* Laser Line */}

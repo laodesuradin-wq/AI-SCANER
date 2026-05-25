@@ -18,7 +18,7 @@ const initialActivityData = [
 
 const initialEvents = [
   { id: 1, type: 'rpa', icon: Bot, color: 'text-indigo-500', title: 'RPA Task: Auto-Validation', desc: 'Berhasil memvalidasi 12 dokumen batch terbaru dengan server Dukcapil.', time: 'Baru saja' },
-  { id: 2, type: 'ai', icon: Cpu, color: 'text-rose-500', title: 'AI Anomaly Detection', desc: 'Mendeteksi kemungkinan NIK ganda pada scan DOC-84221.', time: '2 menit yang lalu' },
+  { id: 2, type: 'ai', icon: Cpu, color: 'text-rose-500', title: 'AI & RAG Detection', desc: 'RAG context vectorization berhasil diaktifkan. Akurasi ekstraksi naik 14%.', time: '2 menit yang lalu' },
   { id: 3, type: 'sync', icon: Network, color: 'text-emerald-500', title: 'Data Integration Sync', desc: 'Sinkronisasi delta warehouse wilayah Jakarta Selatan selesai.', time: '5 menit yang lalu' }
 ];
 
@@ -93,7 +93,7 @@ export default function DashboardView() {
          setEvents(prev => {
             const types = [
               { icon: Bot, color: 'text-indigo-500', type: 'rpa', title: 'RPA Extract', desc: `Mengekstrak data dari ${Math.floor(Math.random() * 5) + 1} KK.` },
-              { icon: Cpu, color: 'text-rose-500', type: 'ai', title: 'AI OCR Tuning', desc: 'Auto-kalibrasi model OCR selesai pada node-2.' },
+              { icon: Cpu, color: 'text-rose-500', type: 'ai', title: 'RAG Context Sync', desc: 'RAG engine memperbarui basis pengetahuan vektor dari dokumen lokal.' },
               { icon: Network, color: 'text-emerald-500', type: 'sync', title: 'Data Validated', desc: `Ping API Dukcapil sukses (${Math.floor(Math.random() * 20 + 10)}ms).` },
             ];
             const randType = types[Math.floor(Math.random() * types.length)];
