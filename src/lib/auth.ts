@@ -6,7 +6,11 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
+// Sheets scopes
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
+// Chat scopes
+provider.addScope('https://www.googleapis.com/auth/chat.messages');
+provider.addScope('https://www.googleapis.com/auth/chat.spaces.readonly');
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;

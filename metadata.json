@@ -1,6 +1,6 @@
 {
-  "name": "Sandra AI - Siak Assistant",
-  "description": "Aplikasi AI Assistant (Sandra) untuk mereduksi human error pada pekerjaan repetitif administrasi Siak Mobile menggunakan Computer Vision dan RPA.",
-  "requestFramePermissions": ["camera"],
+  "name": "YT Trending Remaker",
+  "description": "App that fetches trending YouTube videos and automatically generates AI prompts to make a similar highly-performing video.",
+  "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
