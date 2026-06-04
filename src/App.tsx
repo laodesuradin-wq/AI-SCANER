@@ -1255,6 +1255,15 @@ function BlueprintCard({ bp, deleteBlueprint, setViewingPrompt, addTag, removeTa
            <X size={16} />
          </button>
        </div>
+       
+       <div className="relative w-full aspect-video mb-4 overflow-hidden rounded-xl bg-white/5 shrink-0">
+         <img 
+           src={`https://img.youtube.com/vi/${bp.videoId}/mqdefault.jpg`} 
+           alt={bp.title} 
+           className="object-cover w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
+         />
+       </div>
+
        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{bp.title}</h3>
        
        <div className="flex flex-wrap gap-1.5 mb-3">
